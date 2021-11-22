@@ -1,0 +1,5 @@
+pytest
+pytest-cov
+ruyaml==0.20.0
+jschon==0.7.3
+-e .
