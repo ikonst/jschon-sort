@@ -8,7 +8,8 @@ for JSON Schema handling.
 
 Per the JSON RFC, an object is an unordered collection. In practice, within serialized JSON or YAML files,
 a particular order of properties can benefit readability: for example,
-`{"start": 10, "end": 20}` might read more naturally even though naive lexicographic sorting (e.g. with `json.dumps(..., sort_keys=True)`) would result in `{"end": 20, "start": 10}`.
+`{"start": 10, "end": 20}` read more naturally than naive lexicographic order of `{"end": 20, "start": 10}`
+(that would result from `json.dumps(..., sort_keys=True)`).
 While there are [several](https://github.com/json-schema/json-schema/issues/119)
 [attempts](https://github.com/json-schema-org/json-schema-spec/issues/571)
 to introduce property ordering into JSON Schema, here we're taking a different approach.
