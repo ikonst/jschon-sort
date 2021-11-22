@@ -1,12 +1,12 @@
-`jschon-sort` sorts a JSON or YAML document according to its JSON Schema: that is, so that the order
-in which its objects' keys are declared  matches the order in which properties are declared in its JSON Schema.
+`jschon-sort` sorts a JSON or YAML document according to its JSON Schema:
+object properties are ordered to match the order in which JSON Schema properties (that match them) are declared.
 
 The "jschon" name relates to it being based on the [jschon](https://github.com/marksparkza/jschon) library
 for JSON Schema handling.
 
 ## Motivation
 
-JSON object properties have arbitrary order. In practice, within serialized JSON or YAML files,
+Per the JSON RFC, an object is an unordered collection. In practice, within serialized JSON or YAML files,
 a particular order of properties can benefit readability: for example,
 `{"start": 10, "end": 20}` might read more naturally even though naive lexicographic sorting (e.g. with `json.dumps(..., sort_keys=True)`) would result in `{"end": 20, "start": 10}`.
 While there are [several](https://github.com/json-schema/json-schema/issues/119)
