@@ -31,7 +31,7 @@ def _get_sort_keys_for_json_nodes(node: jschon.JSON) -> Dict[jschon.JSONPointer,
     return mapping
 
 
-def sort_doc_by_schema(doc_data: AnyJSONCompatible, schema_data: AnyJSONCompatible) -> AnyJSONCompatible:
+def sort_doc_by_schema(*, doc_data: AnyJSONCompatible, schema_data: AnyJSONCompatible) -> AnyJSONCompatible:
     schema_json = jschon.JSON(schema_data)
     schema_sort_keys = _get_sort_keys_for_json_nodes(schema_json)
 

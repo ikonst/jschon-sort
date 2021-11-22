@@ -16,6 +16,28 @@ to introduce property ordering into JSON Schema, here we're taking a different a
 By leveraging the fact that the JSON Schema itself is written with human maintainers in mind,
 we can extrapolate the intuitive order from the JSON Schema definitions' ordering and apply it on the document itself.
 
+## Usage
+
+**Shell**:
+
+```shell
+jschon-sort --schema ../schema.json file.yaml
+```
+
+**API**:
+
+```python
+import jschon
+import jschon_sort
+
+jschon.create_catalog('2020-12')
+...
+sorted_doc_data = jschon_sort.sort_doc_by_schema(
+    schema_data=schema_data,
+    doc_data=doc_data,
+)
+```
+
 ## Example
 
 Given **schema**:

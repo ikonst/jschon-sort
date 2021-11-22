@@ -32,7 +32,7 @@ def test_sort_doc_by_schema__failed():
 
     # Act
     with pytest.raises(ValueError, match='Document failed schema validation'):
-        sort_doc_by_schema(doc, SCHEMA)
+        sort_doc_by_schema(doc_data=doc, schema_data=SCHEMA)
 
     # Assert
     assert json.dumps(doc) == doc_str, "ensure doc is not modified in place"
@@ -51,7 +51,7 @@ def test_sort_doc_by_schema(schema_version: str) -> None:
     doc = json.loads(doc_str)
 
     # Act
-    actual = sort_doc_by_schema(doc, {**SCHEMA, '$schema': schema_version})
+    actual = sort_doc_by_schema(doc_data=doc, schema_data={**SCHEMA, '$schema': schema_version})
 
     # Assert
     assert actual is not doc

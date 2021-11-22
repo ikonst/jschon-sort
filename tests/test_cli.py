@@ -52,7 +52,7 @@ def test_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'yaml_i
     schema_path.write_text(json.dumps(schema))
 
     # Act
-    args: List[Union[str, Path]] = ['jschon-sort', doc_path, schema_path]
+    args: List[Union[str, Path]] = ['jschon-sort', '--schema', schema_path, doc_path]
     if dry_run:
         args += ['--dry-run']
     if file_format == 'yaml_indented':

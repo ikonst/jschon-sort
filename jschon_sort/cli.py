@@ -17,19 +17,19 @@ def main():
         description="Sorts a JSON or YAML document to match a JSON Schema's order of properties",
     )
     parser.add_argument('path', help='path to the JSON / YAML document')
-    parser.add_argument('schema_path', help='path to the JSON Schema document')
+    parser.add_argument(
+        '--schema', required=True, metavar='/path/to/schema.json', help='path to the JSON Schema document'
+    )
     parser.add_argument(
         '--dry-run',
         '-n',
-        dest='dry_run',
         help='if set, result is not persisted back to the original file',
         action='store_true',
     )
-    parser.add_argument('--indent', type=int, dest='indent', default=4, help='indent size')
+    parser.add_argument('--indent', type=int, default=4, help='indent size')
     parser.add_argument(
         '--yaml-indent',
         type=lambda s: YamlIndent(*map(int, s.split(','))),
-        dest='yaml_indent',
         metavar='MAPPING,SEQUENCE,OFFSET',
         default=YamlIndent(2, 4, 2),
         help='YAML indent size',
@@ -44,10 +44,10 @@ def main():
         else:
             doc_data = json.load(f)
 
-    with open(args.schema_path) as f:
+    with open(args.schema) as f:
         schema_data = json.load(f)
 
-    sorted_doc_data = sort_doc_by_schema(doc_data, schema_data)
+    sorted_doc_data = sort_doc_by_schema(doc_data=doc_data, schema_data=schema_data)
 
     if not args.dry_run:
         if is_yaml:
