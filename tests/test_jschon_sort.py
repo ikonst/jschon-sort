@@ -12,6 +12,11 @@ SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
+                # patternProperties is ordered intentionally before properties
+                "patternProperties": {
+                    "^B{3}$": {"type": "number"},
+                    "^A{3}$": {"type": "number"},
+                },
                 "properties": {
                     "start": {"type": "number"},
                     "end": {"type": "number"},
@@ -47,7 +52,7 @@ def test_sort_doc_by_schema__failed():
 )
 def test_sort_doc_by_schema(schema_version: str) -> None:
     # Arrange
-    doc_str = '{"ranges": [{"end": 20, "start": 10}]}'
+    doc_str = '{"ranges": [{"end": 20, "start": 10, "AAA": 42, "BBB": 42}]}'
     doc = json.loads(doc_str)
 
     # Act
@@ -56,4 +61,4 @@ def test_sort_doc_by_schema(schema_version: str) -> None:
     # Assert
     assert actual is not doc
     assert json.dumps(doc) == doc_str, "ensure doc is not modified in place"
-    assert json.dumps(actual) == '{"ranges": [{"start": 10, "end": 20}]}'
+    assert json.dumps(actual) == '{"ranges": [{"BBB": 42, "AAA": 42, "start": 10, "end": 20}]}'
