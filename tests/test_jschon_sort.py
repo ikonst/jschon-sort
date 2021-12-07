@@ -94,3 +94,42 @@ def test_sort_doc_by_schema__local_ref() -> None:
     # Assert
     assert actual is not doc
     assert json.dumps(actual) == '{"foo": {"start": 10, "end": 20}}'
+
+
+def test_sort_doc_by_schema__oneof() -> None:
+    # Arrange
+    doc_str = '{"abc": {"end": 20, "start": 10}, "xyz": {"to": 40, "from": 30}}'
+    doc = json.loads(doc_str)
+
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "properties": {
+                        "start": {"type": "number"},
+                        "end": {"type": "number"},
+                    },
+                    "required": ["start", "end"],
+                    "additionalProperties": False,
+                },
+                {
+                    "properties": {
+                        "from": {"type": "number"},
+                        "to": {"type": "number"},
+                    },
+                    "required": ["from", "to"],
+                    "additionalProperties": False,
+                },
+            ],
+        },
+    }
+
+    # Act
+    actual = sort_doc_by_schema(doc_data=doc, schema_data=schema)
+
+    # Assert
+    assert actual is not doc
+    assert json.dumps(actual) == '{"abc": {"start": 10, "end": 20}, "xyz": {"from": 30, "to": 40}}'
