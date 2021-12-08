@@ -2,57 +2,68 @@ import copy
 import math
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Tuple
 
 import jschon.jsonschema
 from jschon.json import AnyJSONCompatible
 
 
-def _get_sort_keys_for_json_nodes(node: jschon.JSON) -> Dict[jschon.JSONPointer, Tuple[int, ...]]:
+def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
     """
     Gets a mapping from JSON nodes (as JSON pointers) to sort keys (as tuples of integers) that match their position
     within the JSON.
     """
     mapping = {}
+    root_depth = len(root_node.path)
 
     def _recurse(node: jschon.JSON, node_sort_key: Tuple[int, ...]) -> None:
+        relative_path = node.path[root_depth:]
+        mapping[relative_path] = node_sort_key
+
         if node.type == "object":
             for idx, v in enumerate(node.data.values()):
                 new_loc = (*node_sort_key, idx)
-                mapping[v.path] = new_loc
                 _recurse(v, new_loc)
         elif node.type == "array":
             for idx, v in enumerate(node.data):
                 new_loc = (*node_sort_key, idx)
                 _recurse(v, new_loc)
 
-    _recurse(node, ())
+    _recurse(root_node, ())
 
     return mapping
 
 
 def sort_doc_by_schema(*, doc_data: AnyJSONCompatible, schema_data: AnyJSONCompatible) -> AnyJSONCompatible:
-    schema_json = jschon.JSON(schema_data)
-    schema_sort_keys = _get_sort_keys_for_json_nodes(schema_json)
-
     try:
-        schema = jschon.JSONSchema(schema_data)
+        root_schema = jschon.JSONSchema(schema_data)
     except jschon.CatalogError:
         # jschon only supports newer jsonschema drafts
         schema_data = copy.copy(schema_data)
         schema_data['$schema'] = "https://json-schema.org/draft/2020-12/schema"
-        schema = jschon.JSONSchema(schema_data)
+        root_schema = jschon.JSONSchema(schema_data)
 
     doc_json = jschon.JSON(doc_data)
-    res = schema.evaluate(doc_json)
+    res = root_schema.evaluate(doc_json)
     if not res.valid:
         raise ValueError('Document failed schema validation')
+
+    schema_sort_keys_cache: Dict[jschon.URI, Mapping[jschon.JSONPointer, Tuple[int, ...]]] = {}
+
+    def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
+        if sort_keys := schema_sort_keys_cache.get(schema.canonical_uri):
+            return sort_keys
+        sort_keys = _get_sort_keys_for_json_nodes(schema)
+        schema_sort_keys_cache[schema.canonical_uri] = sort_keys
+        return sort_keys
 
     doc_sort_keys: Dict[jschon.JSONPointer, Tuple[int, ...]] = {}
 
     def _traverse_scope(scope: jschon.jsonschema.Scope) -> None:
+        schema_sort_keys = _get_sort_keys_for_schema(scope.schema)
+        doc_sort_keys.setdefault(scope.instpath, schema_sort_keys[scope.relpath])
         for child in scope.iter_children():
-            doc_sort_keys[child.instpath] = schema_sort_keys[child.path]
             _traverse_scope(child)
 
     _traverse_scope(res)
