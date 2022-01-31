@@ -35,7 +35,7 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
     return mapping
 
 
-def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: JSONCompatible) -> JSONCompatible:
+def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONCompatible]) -> JSONCompatible:
     try:
         root_schema = jschon.JSONSchema(schema_data)
     except jschon.CatalogError:
@@ -62,7 +62,7 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: JSONCompatible)
 
     def _traverse_scope(scope: jschon.jsonschema.Scope) -> None:
         schema_sort_keys = _get_sort_keys_for_schema(scope.schema)
-        doc_sort_keys.setdefault(scope.instpath, schema_sort_keys[scope.relpath])
+        doc_sort_keys.setdefault(scope.instance.path, schema_sort_keys[scope.relpath])
         for child in scope.iter_children():
             _traverse_scope(child)
 
@@ -71,8 +71,12 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: JSONCompatible)
     end_sort_key = (math.inf,)
 
     def _sort_json_node(node: JSONCompatible, json_node: jschon.JSON) -> JSONCompatible:
-        """Traverses the nodes while also keeping at pointer at a high-level JSON object (to get the JSON pointers)."""
-        if json_node.type == "object":
+        """
+        @param node: the node being traversed (the data)
+        @param json_node: the node being traversed (jschon's representation)
+        @return: sorted copy
+        """
+        if isinstance(node, Dict):
             key_sort_keys: Dict[str, Tuple[Tuple[float, ...], str]] = {}
 
             properties: List[Tuple[str, JSONCompatible]] = []
@@ -97,7 +101,7 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: JSONCompatible)
 
             return node_copy
 
-        elif json_node.type == "array":
+        elif isinstance(node, list):
             return [_sort_json_node(node[idx], v_json) for idx, v_json in enumerate(json_node.data)]
 
         return node
