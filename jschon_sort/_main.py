@@ -57,7 +57,7 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JS
 
     def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
         canonical_uri = schema.canonical_uri
-        if canonical_uri is None:
+        if canonical_uri is None:  # pragma: no cover
             raise ValueError('Schema must have a canonical URI')
         if sort_keys := schema_sort_keys_cache.get(canonical_uri):
             return sort_keys
