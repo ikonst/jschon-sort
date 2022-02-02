@@ -1,5 +1,6 @@
 import json
-from typing import Dict, Mapping
+from typing import Dict
+from typing import Mapping
 
 import pytest
 from jschon.json import JSONCompatible

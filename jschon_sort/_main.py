@@ -1,8 +1,10 @@
 import copy
 import math
-from typing import Dict, Sequence, cast
+from typing import cast
+from typing import Dict
 from typing import List
 from typing import Mapping
+from typing import Sequence
 from typing import Tuple
 
 import jschon.jsonschema
