@@ -1,10 +1,13 @@
 import json
+from typing import Dict, Mapping
 
 import pytest
+from jschon.json import JSONCompatible
 
 from jschon_sort import sort_doc_by_schema
 
-SCHEMA = {
+
+SCHEMA: Mapping[str, JSONCompatible] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "properties": {
@@ -69,7 +72,7 @@ def test_sort_doc_by_schema__local_ref() -> None:
     doc_str = '{"foo": {"end": 20, "start": 10}}'
     doc = json.loads(doc_str)
 
-    schema = {
+    schema: Mapping[str, JSONCompatible] = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "$defs": {
@@ -101,7 +104,7 @@ def test_sort_doc_by_schema__oneof() -> None:
     doc_str = '{"abc": {"end": 20, "start": 10}, "xyz": {"to": 40, "from": 30}}'
     doc = json.loads(doc_str)
 
-    schema = {
+    schema: Mapping[str, JSONCompatible] = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "additionalProperties": {

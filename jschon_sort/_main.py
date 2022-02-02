@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import Dict
+from typing import Dict, Sequence, cast
 from typing import List
 from typing import Mapping
 from typing import Tuple
@@ -22,11 +22,13 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
         mapping[relative_path] = node_sort_key
 
         if node.type == "object":
-            for idx, v in enumerate(node.data.values()):
+            object_data = cast(Mapping[str, jschon.JSON], node.data)
+            for idx, v in enumerate(object_data.values()):
                 new_loc = (*node_sort_key, idx)
                 _recurse(v, new_loc)
         elif node.type == "array":
-            for idx, v in enumerate(node.data):
+            array_data = cast(Sequence[jschon.JSON], node.data)
+            for idx, v in enumerate(array_data):
                 new_loc = (*node_sort_key, idx)
                 _recurse(v, new_loc)
 
@@ -35,12 +37,12 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
     return mapping
 
 
-def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONCompatible]) -> JSONCompatible:
+def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JSONCompatible]) -> JSONCompatible:
     try:
         root_schema = jschon.JSONSchema(schema_data)
     except jschon.CatalogError:
         # jschon only supports newer jsonschema drafts
-        schema_data = copy.copy(schema_data)
+        schema_data = dict(schema_data)
         schema_data['$schema'] = "https://json-schema.org/draft/2020-12/schema"
         root_schema = jschon.JSONSchema(schema_data)
 
@@ -52,10 +54,13 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONC
     schema_sort_keys_cache: Dict[jschon.URI, Mapping[jschon.JSONPointer, Tuple[int, ...]]] = {}
 
     def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
-        if sort_keys := schema_sort_keys_cache.get(schema.canonical_uri):
+        canonical_uri = schema.canonical_uri
+        if canonical_uri is None:
+            raise ValueError('Schema must have a canonical URI')
+        if sort_keys := schema_sort_keys_cache.get(canonical_uri):
             return sort_keys
         sort_keys = _get_sort_keys_for_json_nodes(schema)
-        schema_sort_keys_cache[schema.canonical_uri] = sort_keys
+        schema_sort_keys_cache[canonical_uri] = sort_keys
         return sort_keys
 
     doc_sort_keys: Dict[jschon.JSONPointer, Tuple[int, ...]] = {}
@@ -77,6 +82,7 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONC
         @return: sorted copy
         """
         if isinstance(node, Dict):
+            object_data = cast(Mapping[str, jschon.JSON], json_node.data)
             key_sort_keys: Dict[str, Tuple[Tuple[float, ...], str]] = {}
 
             properties: List[Tuple[str, JSONCompatible]] = []
@@ -84,7 +90,7 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONC
             k: str
             v: JSONCompatible
             v_json: jschon.JSON
-            for (k, v), v_json in zip(node.items(), json_node.data.values()):
+            for (k, v), v_json in zip(node.items(), object_data.values()):
                 properties.append((k, _sort_json_node(v, v_json)))
                 # Keys which don't map to the schema (e.g. undefined properties when additionalProperties is missing,
                 # defaulting to true) are assumed to come last (end_sort_key).
@@ -102,7 +108,8 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Dict[str, JSONC
             return node_copy
 
         elif isinstance(node, list):
-            return [_sort_json_node(node[idx], v_json) for idx, v_json in enumerate(json_node.data)]
+            list_data = cast(Sequence[jschon.JSON], json_node.data)
+            return [_sort_json_node(node[idx], v_json) for idx, v_json in enumerate(list_data)]
 
         return node
 
