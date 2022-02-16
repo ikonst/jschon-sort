@@ -11,7 +11,7 @@ import pytest
 
 @pytest.mark.parametrize('dry_run', (False, True), ids=('wet_run', 'dry_run'))
 @pytest.mark.parametrize('file_format', ('yaml', 'yaml_indented', 'json'))
-def test_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'yaml_indented', 'json']) -> None:
+def test_sort_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'yaml_indented', 'json']) -> None:
     # Arrange
     schema = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -99,6 +99,99 @@ def test_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'yaml_i
                     start: 10 # start comment
                     end: 20 # end comment
                     zero: null
+                """
+                ).lstrip()
+            )
+        else:
+            raise NotImplementedError(file_format)  # pragma: no cover
+
+
+@pytest.mark.parametrize('dry_run', (False, True), ids=('wet_run', 'dry_run'))
+@pytest.mark.parametrize('file_format', ('yaml', 'yaml_indented', 'json'))
+def test_remove_additional_props_cli(
+    tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'yaml_indented', 'json']
+) -> None:
+    # Arrange
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+            "test": {
+                "type": "object",
+                "properties": {
+                    "foo": {"type": "number"},
+                    "bar": {"type": "number"},
+                },
+            },
+        },
+    }
+
+    if file_format == 'json':
+        doc_text = '{"test": {"foo": 1, "bar": 2, "baz": null}}'
+        doc_path = tmp_path / "doc.json"
+        doc_path.write_text(doc_text)
+    elif file_format in ('yaml', 'yaml_indented'):
+        doc_text = dedent(
+            """
+        test:  # test comment
+          foo: 1  # foo comment
+          bar: 2  # bar comment
+          baz: null
+        """
+        )
+        doc_path = tmp_path / "doc.yaml"
+        doc_path.write_text(doc_text)
+    else:
+        raise NotImplementedError(file_format)  # pragma: no cover
+
+    schema_path = tmp_path / "schema.json"
+    schema_path.write_text(json.dumps(schema))
+
+    # Act
+    args: List[Union[str, Path]] = ['jschon-remove-additional-props', '--schema', schema_path, doc_path]
+    if dry_run:
+        args += ['--dry-run']
+    if file_format == 'yaml_indented':
+        args += ['--yaml-indent', '4,4,4']
+    subprocess.check_output(args)
+
+    # Assert
+    if dry_run:
+        assert doc_path.read_text() == doc_text
+    else:
+        if file_format == 'json':
+            assert (
+                doc_path.read_text()
+                == dedent(
+                    """
+            {
+                "test": {
+                    "foo": 1,
+                    "bar": 2
+                }
+            }
+            """
+                ).strip()
+            )
+        elif file_format == 'yaml':
+            assert (
+                doc_path.read_text()
+                == dedent(
+                    """
+            test:  # test comment
+              foo: 1  # foo comment
+              bar: 2  # bar comment
+            """
+                ).lstrip()
+            )
+        elif file_format == 'yaml_indented':
+            assert (
+                doc_path.read_text()
+                == dedent(
+                    """
+                test:  # test comment
+                    foo: 1 # foo comment
+                    bar: 2 # bar comment
                 """
                 ).lstrip()
             )

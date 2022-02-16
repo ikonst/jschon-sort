@@ -1,5 +1,9 @@
-`jschon-sort` sorts a JSON or YAML document according to its JSON Schema:
+Provides JSON tools:
+
+- `jschon-sort` sorts a JSON or YAML document according to its JSON Schema:
 object properties are ordered to match the order in which JSON Schema properties (that match them) are declared.
+
+- `jschon-remove-additional-props` removes properties not defined in the JSON Schema.
 
 The "jschon" name relates to it being based on the [jschon](https://github.com/marksparkza/jschon) library
 for JSON Schema handling.
@@ -28,13 +32,14 @@ jschon-sort --schema ../schema.json file.yaml
 
 ```python
 import jschon
-import jschon_sort
+import jschon_tools
 
 jschon.create_catalog('2020-12')
 ...
-sorted_doc_data = jschon_sort.sort_doc_by_schema(
+sorted_doc_data = jschon_tools.process_json_doc(
     schema_data=schema_data,
     doc_data=doc_data,
+    sort=True,
 )
 ```
 

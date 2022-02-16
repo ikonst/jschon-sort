@@ -1,11 +1,10 @@
 import json
-from typing import Dict
 from typing import Mapping
 
 import pytest
 from jschon.json import JSONCompatible
 
-from jschon_sort import sort_doc_by_schema
+from jschon_tools import process_json_doc
 
 
 SCHEMA: Mapping[str, JSONCompatible] = {
@@ -41,7 +40,7 @@ def test_sort_doc_by_schema__failed():
 
     # Act
     with pytest.raises(ValueError, match='Document failed schema validation'):
-        sort_doc_by_schema(doc_data=doc, schema_data=SCHEMA)
+        process_json_doc(doc_data=doc, schema_data=SCHEMA, sort=True)
 
     # Assert
     assert json.dumps(doc) == doc_str, "ensure doc is not modified in place"
@@ -60,7 +59,7 @@ def test_sort_doc_by_schema(schema_version: str) -> None:
     doc = json.loads(doc_str)
 
     # Act
-    actual = sort_doc_by_schema(doc_data=doc, schema_data={**SCHEMA, '$schema': schema_version})
+    actual = process_json_doc(doc_data=doc, schema_data={**SCHEMA, '$schema': schema_version}, sort=True)
 
     # Assert
     assert actual is not doc
@@ -93,7 +92,7 @@ def test_sort_doc_by_schema__local_ref() -> None:
     }
 
     # Act
-    actual = sort_doc_by_schema(doc_data=doc, schema_data=schema)
+    actual = process_json_doc(doc_data=doc, schema_data=schema, sort=True)
 
     # Assert
     assert actual is not doc
@@ -132,7 +131,7 @@ def test_sort_doc_by_schema__oneof() -> None:
     }
 
     # Act
-    actual = sort_doc_by_schema(doc_data=doc, schema_data=schema)
+    actual = process_json_doc(doc_data=doc, schema_data=schema, sort=True)
 
     # Assert
     assert actual is not doc

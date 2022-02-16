@@ -1,4 +1,3 @@
-import copy
 import math
 from typing import cast
 from typing import Dict
@@ -9,6 +8,9 @@ from typing import Tuple
 
 import jschon.jsonschema
 from jschon.json import JSONCompatible
+
+
+_END_SORT_KEY = (math.inf,)
 
 
 def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
@@ -39,20 +41,7 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
     return mapping
 
 
-def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JSONCompatible]) -> JSONCompatible:
-    try:
-        root_schema = jschon.JSONSchema(schema_data)
-    except jschon.CatalogError:
-        # jschon only supports newer jsonschema drafts
-        schema_data = dict(schema_data)
-        schema_data['$schema'] = "https://json-schema.org/draft/2020-12/schema"
-        root_schema = jschon.JSONSchema(schema_data)
-
-    doc_json = jschon.JSON(doc_data)
-    res = root_schema.evaluate(doc_json)
-    if not res.valid:
-        raise ValueError('Document failed schema validation')
-
+def _get_sort_keys_for_json_doc(*, root_scope: jschon.jsonschema.Scope) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
     schema_sort_keys_cache: Dict[jschon.URI, Mapping[jschon.JSONPointer, Tuple[int, ...]]] = {}
 
     def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
@@ -73,11 +62,37 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JS
         for child in scope.iter_children():
             _traverse_scope(child)
 
-    _traverse_scope(res)
+    _traverse_scope(root_scope)
 
-    end_sort_key = (math.inf,)
+    return doc_sort_keys
 
-    def _sort_json_node(node: JSONCompatible, json_node: jschon.JSON) -> JSONCompatible:
+
+def _get_root_scope(doc_json: jschon.JSON, schema_data: Mapping[str, JSONCompatible]) -> jschon.jsonschema.Scope:
+    try:
+        root_schema = jschon.JSONSchema(schema_data)
+    except jschon.CatalogError:
+        # jschon only supports newer jsonschema drafts
+        schema_data = dict(schema_data)
+        schema_data['$schema'] = "https://json-schema.org/draft/2020-12/schema"
+        root_schema = jschon.JSONSchema(schema_data)
+    res = root_schema.evaluate(doc_json)
+    if not res.valid:
+        raise ValueError('Document failed schema validation')
+    return res
+
+
+def process_json_doc(
+    *,
+    doc_data: JSONCompatible,
+    schema_data: Mapping[str, JSONCompatible],
+    sort: bool = False,
+    remove_additional_props: bool = False,
+) -> JSONCompatible:
+    doc_json = jschon.JSON(doc_data)
+    root_scope = _get_root_scope(doc_json, schema_data=schema_data)
+    doc_sort_keys = _get_sort_keys_for_json_doc(root_scope=root_scope)
+
+    def _traverse_node(node: JSONCompatible, json_node: jschon.JSON) -> JSONCompatible:
         """
         @param node: the node being traversed (the data)
         @param json_node: the node being traversed (jschon's representation)
@@ -93,14 +108,18 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JS
             v: JSONCompatible
             v_json: jschon.JSON
             for (k, v), v_json in zip(node.items(), object_data.values()):
-                properties.append((k, _sort_json_node(v, v_json)))
+                v = _traverse_node(v, v_json)
                 # Keys which don't map to the schema (e.g. undefined properties when additionalProperties is missing,
                 # defaulting to true) are assumed to come last (end_sort_key).
                 # As a tie breaker for multiple such undefined properties, we use the key's name.
                 # TODO: update jschon to add additional properties to res.children when appropriate
-                key_sort_keys[k] = doc_sort_keys.get(v_json.path, end_sort_key), k
+                sk = doc_sort_keys.get(v_json.path, _END_SORT_KEY)
+                if sk is not _END_SORT_KEY or not remove_additional_props:
+                    key_sort_keys[k] = sk, k
+                    properties.append((k, v))
 
-            properties.sort(key=lambda pair: key_sort_keys[pair[0]])
+            if sort:
+                properties.sort(key=lambda pair: key_sort_keys[pair[0]])
 
             # to maintain YAML round-trip data, copy node and re-populate
             node_copy = node.copy()
@@ -111,10 +130,10 @@ def sort_doc_by_schema(*, doc_data: JSONCompatible, schema_data: Mapping[str, JS
 
         elif isinstance(node, list):
             list_data = cast(Sequence[jschon.JSON], json_node.data)
-            return [_sort_json_node(node[idx], v_json) for idx, v_json in enumerate(list_data)]
+            return [_traverse_node(node[idx], v_json) for idx, v_json in enumerate(list_data)]
 
         return node
 
     # we recurse down both the "JSON" and the actual document, and mutate only the actual document
     # which is the primitive type that we can serialize back to JSON/YAML easily
-    return _sort_json_node(doc_data, doc_json)
+    return _traverse_node(doc_data, doc_json)
