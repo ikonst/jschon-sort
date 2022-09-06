@@ -41,7 +41,9 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
     return mapping
 
 
-def _get_sort_keys_for_json_doc(*, root_scope: jschon.jsonschema.Scope) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
+def _get_sort_keys_for_json_doc(
+    *, root_result: jschon.jsonschema.Result
+) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
     schema_sort_keys_cache: Dict[jschon.URI, Mapping[jschon.JSONPointer, Tuple[int, ...]]] = {}
 
     def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
@@ -56,18 +58,18 @@ def _get_sort_keys_for_json_doc(*, root_scope: jschon.jsonschema.Scope) -> Mappi
 
     doc_sort_keys: Dict[jschon.JSONPointer, Tuple[int, ...]] = {}
 
-    def _traverse_scope(scope: jschon.jsonschema.Scope) -> None:
-        schema_sort_keys = _get_sort_keys_for_schema(scope.schema)
-        doc_sort_keys.setdefault(scope.instance.path, schema_sort_keys[scope.relpath])
-        for child in scope.iter_children():
-            _traverse_scope(child)
+    def _traverse_result(result: jschon.jsonschema.Result) -> None:
+        schema_sort_keys = _get_sort_keys_for_schema(result.schema)
+        doc_sort_keys.setdefault(result.instance.path, schema_sort_keys[result.relpath])
+        for child in result.children.values():
+            _traverse_result(child)
 
-    _traverse_scope(root_scope)
+    _traverse_result(root_result)
 
     return doc_sort_keys
 
 
-def _get_root_scope(doc_json: jschon.JSON, schema_data: Mapping[str, JSONCompatible]) -> jschon.jsonschema.Scope:
+def _get_root_result(doc_json: jschon.JSON, schema_data: Mapping[str, JSONCompatible]) -> jschon.jsonschema.Result:
     try:
         root_schema = jschon.JSONSchema(schema_data)
     except jschon.CatalogError:
@@ -89,8 +91,8 @@ def process_json_doc(
     remove_additional_props: bool = False,
 ) -> JSONCompatible:
     doc_json = jschon.JSON(doc_data)
-    root_scope = _get_root_scope(doc_json, schema_data=schema_data)
-    doc_sort_keys = _get_sort_keys_for_json_doc(root_scope=root_scope)
+    root_result = _get_root_result(doc_json, schema_data=schema_data)
+    doc_sort_keys = _get_sort_keys_for_json_doc(root_result=root_result)
 
     def _traverse_node(node: JSONCompatible, json_node: jschon.JSON) -> JSONCompatible:
         """
