@@ -22,4 +22,4 @@ repos:
         additional_dependencies:
         -   --no-compile
         -   ruyaml==0.20.0
-        -   jschon==0.8.4
+        -   jschon==0.9.0
