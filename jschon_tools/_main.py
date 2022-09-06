@@ -41,7 +41,9 @@ def _get_sort_keys_for_json_nodes(root_node: jschon.JSON) -> Mapping[jschon.JSON
     return mapping
 
 
-def _get_sort_keys_for_json_doc(*, root_result: jschon.jsonschema.Result) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
+def _get_sort_keys_for_json_doc(
+    *, root_result: jschon.jsonschema.Result
+) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
     schema_sort_keys_cache: Dict[jschon.URI, Mapping[jschon.JSONPointer, Tuple[int, ...]]] = {}
 
     def _get_sort_keys_for_schema(schema: jschon.JSONSchema) -> Mapping[jschon.JSONPointer, Tuple[int, ...]]:
