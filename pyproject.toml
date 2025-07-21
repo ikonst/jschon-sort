@@ -1,3 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jschon-sort"
+version = "0.2.0"
+classifiers = ["Programming Language :: Python :: 3"]
+description = "Sorts a JSON or YAML document to match a JSON Schema's order of properties"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.8"
+dependencies = ["jschon>=0.9", "ruyaml"]
+
+[project.scripts]
+jschon-sort = "jschon_tools.cli:sort_main"
+jschon-remove-additional-props = "jschon_tools.cli:remove_additional_props_main"
+
+[tool.setuptools.package-data]
+"jschon_sort" = ["py.typed"]
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
@@ -14,3 +34,18 @@ show_error_codes = true
 implicit_reexport = false
 warn_unreachable = true
 disallow_incomplete_defs = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+enable_error_code = "truthy-function"
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+addopts = "--cov ."
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+omit = "setup.py"
