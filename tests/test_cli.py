@@ -35,14 +35,12 @@ def test_sort_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'y
         doc_path = tmp_path / "doc.json"
         doc_path.write_text(doc_text)
     elif file_format in ('yaml', 'yaml_indented'):
-        doc_text = dedent(
-            """
+        doc_text = dedent("""
         range:  # range comment
           end: 20  # end comment
           start: 10  # start comment
           zero: null
-        """
-        )
+        """)
         doc_path = tmp_path / "doc.yaml"
         doc_path.write_text(doc_text)
     else:
@@ -64,10 +62,7 @@ def test_sort_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'y
         assert doc_path.read_text() == doc_text
     else:
         if file_format == 'json':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
             {
                 "range": {
                     "start": 10,
@@ -75,33 +70,21 @@ def test_sort_cli(tmp_path: Path, dry_run: bool, file_format: Literal['yaml', 'y
                     "zero": null
                 }
             }
-            """
-                ).strip()
-            )
+            """).strip()
         elif file_format == 'yaml':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
             range:  # range comment
               start: 10  # start comment
               end: 20  # end comment
               zero: null
-            """
-                ).lstrip()
-            )
+            """).lstrip()
         elif file_format == 'yaml_indented':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
                 range:  # range comment
                     start: 10 # start comment
                     end: 20 # end comment
                     zero: null
-                """
-                ).lstrip()
-            )
+                """).lstrip()
         else:
             raise NotImplementedError(file_format)  # pragma: no cover
 
@@ -131,14 +114,12 @@ def test_remove_additional_props_cli(
         doc_path = tmp_path / "doc.json"
         doc_path.write_text(doc_text)
     elif file_format in ('yaml', 'yaml_indented'):
-        doc_text = dedent(
-            """
+        doc_text = dedent("""
         test:  # test comment
           foo: 1  # foo comment
           bar: 2  # bar comment
           baz: null
-        """
-        )
+        """)
         doc_path = tmp_path / "doc.yaml"
         doc_path.write_text(doc_text)
     else:
@@ -160,40 +141,25 @@ def test_remove_additional_props_cli(
         assert doc_path.read_text() == doc_text
     else:
         if file_format == 'json':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
             {
                 "test": {
                     "foo": 1,
                     "bar": 2
                 }
             }
-            """
-                ).strip()
-            )
+            """).strip()
         elif file_format == 'yaml':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
             test:  # test comment
               foo: 1  # foo comment
               bar: 2  # bar comment
-            """
-                ).lstrip()
-            )
+            """).lstrip()
         elif file_format == 'yaml_indented':
-            assert (
-                doc_path.read_text()
-                == dedent(
-                    """
+            assert doc_path.read_text() == dedent("""
                 test:  # test comment
                     foo: 1 # foo comment
                     bar: 2 # bar comment
-                """
-                ).lstrip()
-            )
+                """).lstrip()
         else:
             raise NotImplementedError(file_format)  # pragma: no cover

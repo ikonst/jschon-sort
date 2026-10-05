@@ -6,7 +6,6 @@ from jschon.json import JSONCompatible
 
 from jschon_tools import process_json_doc
 
-
 SCHEMA: Mapping[str, JSONCompatible] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",

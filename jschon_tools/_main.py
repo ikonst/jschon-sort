@@ -9,7 +9,6 @@ from typing import Tuple
 import jschon.jsonschema
 from jschon.json import JSONCompatible
 
-
 _END_SORT_KEY = (math.inf,)
 
 
